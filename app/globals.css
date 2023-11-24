@@ -5,13 +5,13 @@
 }
 
 html {
-  background: #000;
-  color: #fff;
+
+  color: black;
 
 }
 
 a {
-  color: #fff;
+  color: black;
 }
 
 html,
@@ -63,7 +63,7 @@ section.text {
   align-items: center;
   justify-content: space-between;
   width: 30%;
-  height:400px;
+  
   margin: 0 0 20px 20px;
 }
 
