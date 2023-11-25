@@ -12,7 +12,8 @@ const ShaderMaterialCustom = shaderMaterial(
       time: 0,
       mouseDes: { value: new THREE.Vector2(0.,0.) },
       uTexture: { value: null },
-      uOut : {value :0.}
+      uOut : {value :0.},
+      resolution:{value:0.}
     },
     `
     precision highp float;
@@ -29,12 +30,17 @@ const ShaderMaterialCustom = shaderMaterial(
     uniform float time;
     uniform float uOut;
     uniform sampler2D uTexture;
+    uniform vec2 resolution;
     float pointRay(vec2 uv, float size, float smoothing)
     {
-        float d = length(uv);
+        vec2 uvn = uv;
+       // uvn.y *= resolution.y/resolution.x; 
+        float d = length(uvn);
         
-        
-        d = smoothstep(size-smoothing, size+smoothing, d);
+        // d/10.
+        // size-smoothing - 0.32, size+smoothing +0.1
+        d = smoothstep(size-smoothing - 0.42, size+smoothing, d );
+       // d = smoothstep(0.05,0.1, d);
         
         return d;
     }
@@ -42,8 +48,9 @@ const ShaderMaterialCustom = shaderMaterial(
     float sdBox( vec3 p, vec3 b )
     {
       vec3 q = abs(p) - b;
-      return min(max(q.x,q.y),0.5);
-     // return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
+  
+      return min(max(q.x,q.y),0.5) ;
+     // return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.);
     }
 
     float sdCir( vec2 p, float r )
@@ -64,22 +71,23 @@ const ShaderMaterialCustom = shaderMaterial(
       
 
       //rls /= pointRay(vUv  - vec2(mouseDes.x ,mouseDes.y), .01 - sin(time), 0.42 );
-      rls /= pointRay(vUv - mouseDes , .001  , 0.42 );
 
-
-
-      float cir = pointRay(vUv  - vec2(mouseDes.x ,mouseDes.y), .01 , 0.42 );
-     // rls *= cir;
+      float bombom = pointRay(vUv - mouseDes  , .001 , .42 );
+    
+      rls /= bombom;
+     
+      float cir = pointRay(vUv  - vec2(mouseDes.x ,mouseDes.y), .01 , 0.32 );
+      //rls *= cir;
 
       rls = step(0.495, rls);
- 
+      vec3 jj = rls;
       vec3 outRls = 1.-rls;
     
 
       gl_FragColor = vec4(vec3(cir),1.);
         
       gl_FragColor = vec4(outRls * img,1.-rls.x);
-    
+     // gl_FragColor = vec4(vec3(rls),1.);
     //gl_FragColor=vec4(vec3(mouseDes,1.),1.);
   }
       `
@@ -89,6 +97,7 @@ const ShaderMaterialCustom = shaderMaterial(
 export default function App() {
   const [isTouch, setTouch] = useState(false)
   useEffect(() => {
+    localStorage.clear()
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0
     setTouch(isTouch)
   }, [])
@@ -138,18 +147,21 @@ function ExampleComponent({id}) {
   const el = useRef(null)
   const size = useRef([])
   const inOut = useRef(0)
-  
+  const lock = useRef(false)
   //console.log('2')
   useEffect(() => {
-    localStorage.clear()
+    
     localStorage.setItem(`x${id}`,.5)
     localStorage.setItem(`y${id}`,.5)
     localStorage.setItem(`status${id}`,0)
     size.current = [el.current.clientWidth,el.current.clientHeight]
+    const timeline = gsap.timeline({ overwrite: true })
+
+
 
     el.current.onmousemove = function(e) { 
      
-        if(inOut.current === 0) return
+        if(inOut.current === 0 && lock.current === false) return
         let offsetLeft = e.currentTarget.offsetLeft 
         let offsetTop = e.currentTarget.offsetTop 
         const x = e.pageX - offsetLeft; 
@@ -158,37 +170,41 @@ function ExampleComponent({id}) {
       
        let nx = {val : localStorage.getItem(`x${id}`)}
        let ny = {val : localStorage.getItem(`y${id}`)}
-       gsap.timeline({ overwrite: true }).to(nx,{
-        val: x/e.currentTarget.clientWidth,
-        duration:.15,
-        onUpdate:() => {
-          localStorage.setItem(`x${id}`,nx.val)
-        }
-      }).to(ny,{
-        val: y/e.currentTarget.clientHeight,
-        duration:.15,
-        onUpdate:() => {
-          localStorage.setItem(`y${id}`,ny.val)
-        
-        }
-      },"<")
-        // localStorage.setItem(`x${id}`,nx)
-        // localStorage.setItem(`y${id}`,ny)
+       timeline.clear()
+       timeline.to(nx,{
+          val: x/e.currentTarget.clientWidth,
+          duration:.1,
+          onUpdate:() => {
+            localStorage.setItem(`x${id}`,nx.val)
+          }
+        }).to(ny,{
+          val: y/e.currentTarget.clientHeight,
+          duration:.1,
+          onUpdate:() => {
+            localStorage.setItem(`y${id}`,ny.val)
+          
+          }
+        },"<")
+        //  localStorage.setItem(`x${id}`,x/e.currentTarget.clientWidth)
+        //  localStorage.setItem(`y${id}`, y/e.currentTarget.clientHeight)
     }
     el.current.onmouseenter = function(e) {
     //  console.log('enter')
       inOut.current = 1
+      lock.current = false
       localStorage.setItem(`status${id}`,1)
     }
     el.current.onmouseout = function(e) {
      // console.log('out')
       inOut.current = 0
+      lock.current = true
       localStorage.setItem(`status${id}`,0)
       let nx = {val : localStorage.getItem(`x${id}`)}
       let ny = {val : localStorage.getItem(`y${id}`)}
-      gsap.timeline({ overwrite: true }).to(nx,{
+    
+      timeline.clear().to(nx,{
         val: .5,
-        duration:4,
+        duration:3,
         ease: "expo.out",
         onUpdate:() => {
           localStorage.setItem(`x${id}`,nx.val)
@@ -198,15 +214,14 @@ function ExampleComponent({id}) {
         }
       }).to(ny,{
         val: .5,
-        duration:4,
+        duration:3,
         ease: "expo.out",
         onUpdate:() => {
           localStorage.setItem(`y${id}`,ny.val)
         
         }
       },"<")
-      document.body.addEventListener('mousemove', handleWindowResize);
-      return  document.body.removeEventListener('mousemove', handleWindowResize);
+  
     }
 
   },[el])
@@ -215,7 +230,7 @@ function ExampleComponent({id}) {
   }
   return (
     <>
-      <div ref={el} className="Placeholder ScrollScene" id={id} style={{height: `${Math.random() * 700 + 350}px !important`}}></div>
+      <div ref={el} className="Placeholder ScrollScene" id={id} /* style={{height: `${Math.random() * 700 + 350}px !important`}} */></div>
       <UseCanvas>
         <ScrollScene track={el}>
           {(props) => (
@@ -238,7 +253,7 @@ function MeshChild({size,id}) {
 
       let posx = localStorage.getItem(`x${id}`)
       let posy = 1.-localStorage.getItem(`y${id}`)
-      
+      mesh.current.material.uniforms.resolution.value =  new THREE.Vector2(size[0],size[1])
       mesh.current.material.uniforms.time.value = state.clock.elapsedTime
       mesh.current.material.uniforms.uOut.value = localStorage.getItem(`status${id}`)
       mesh.current.material.uniforms.mouseDes.value = new THREE.Vector2(posx,posy)
