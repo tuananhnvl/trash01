@@ -10,7 +10,7 @@ import gsap from 'gsap'
 const ShaderMaterialCustom = shaderMaterial(
     {
       time: 0,
-      mouseDes: { value: new THREE.Vector2(0.,0.) },
+      mouseDes: { value: new THREE.Vector2(-.5,-.5) },
       uTexture: { value: null },
       uOut : {value :0.},
       resolution:{value:0.}
@@ -65,18 +65,18 @@ const ShaderMaterialCustom = shaderMaterial(
       vec3 fill = vec3(0.);
       vec3 rls = vec3(1.); // white
    
-      float box = sdBox(vec3(vUv,0.) - vec3(.5,.5,0.),vec3(vec2(.0),0.));
+      float box = sdBox(vec3(vUv,0.) - vec3(vec2(.5),0.),vec3(vec2(0.),0.));
       
       rls *= box  ;
       
 
-      //rls /= pointRay(vUv  - vec2(mouseDes.x ,mouseDes.y), .01 - sin(time), 0.42 );
+      //rls /= pointRay(vUv  - mouseDes, .01 - sin(time), 0.42 );
 
-      float bombom = pointRay(vUv - mouseDes  , .001 , .42 );
+      float bombom = pointRay(vUv - mouseDes  , .01 , .42 );
     
       rls /= bombom;
      
-      float cir = pointRay(vUv  - vec2(mouseDes.x ,mouseDes.y), .01 , 0.32 );
+      float cir = pointRay(vUv  - mouseDes, .01 , 0.32 );
       //rls *= cir;
 
       rls = step(0.495, rls);
@@ -151,8 +151,8 @@ function ExampleComponent({id}) {
   //console.log('2')
   useEffect(() => {
     
-    localStorage.setItem(`x${id}`,.5)
-    localStorage.setItem(`y${id}`,.5)
+    localStorage.setItem(`x${id}`,0)
+    localStorage.setItem(`y${id}`,0)
     localStorage.setItem(`status${id}`,0)
     size.current = [el.current.clientWidth,el.current.clientHeight]
     const timeline = gsap.timeline({ overwrite: true })
@@ -173,20 +173,18 @@ function ExampleComponent({id}) {
        timeline.clear()
        timeline.to(nx,{
           val: x/e.currentTarget.clientWidth,
-          duration:.1,
+          duration:.2,
           onUpdate:() => {
             localStorage.setItem(`x${id}`,nx.val)
           }
         }).to(ny,{
           val: y/e.currentTarget.clientHeight,
-          duration:.1,
+          duration:.2,
           onUpdate:() => {
             localStorage.setItem(`y${id}`,ny.val)
           
           }
         },"<")
-        //  localStorage.setItem(`x${id}`,x/e.currentTarget.clientWidth)
-        //  localStorage.setItem(`y${id}`, y/e.currentTarget.clientHeight)
     }
     el.current.onmouseenter = function(e) {
     //  console.log('enter')
@@ -225,9 +223,7 @@ function ExampleComponent({id}) {
     }
 
   },[el])
-  function handleWindowResize(e) {
-    console.log(e)
-  }
+
   return (
     <>
       <div ref={el} className="Placeholder ScrollScene" id={id} /* style={{height: `${Math.random() * 700 + 350}px !important`}} */></div>
@@ -246,7 +242,7 @@ function MeshChild({size,id}) {
 
     const  t = useTexture(['a.jpg','b.jpg','c.jpg','d.jpg','e.jpg','f.jpg'])
     useEffect(() => { 
-      console.log(id)
+    
       mesh.current.material.uniforms.uTexture.value = t[id-1]
     }, [t])
     useFrame((state) => { 
@@ -262,7 +258,6 @@ function MeshChild({size,id}) {
       <mesh ref={mesh} >
         <planeGeometry args={[size[0] / 1.0,size[1]/ 1.0]} />
          <shaderMaterialCustom /> 
-       {/*  <meshBasicMaterial color={'white'}/> */}
       </mesh>
     )
   }
