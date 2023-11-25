@@ -244,7 +244,7 @@ function MeshChild({size,id}) {
       localStorage.setItem(`x${id}`,.5)
       localStorage.setItem(`y${id}`,.5)
       localStorage.setItem(`status${id}`,0)
-      console.log(mesh.current.material.uniforms.mouseDes.value)
+     // console.log(mesh.current.material.uniforms.mouseDes.value)
       mesh.current.material.uniforms.uTexture.value = t[id-1]
     }, [t])
     useFrame((state) => { 
@@ -256,7 +256,7 @@ function MeshChild({size,id}) {
       mesh.current.material.uniforms.uOut.value = localStorage.getItem(`status${id}`)
       mesh.current.material.uniforms.mouseDes.value = new THREE.Vector2(posx,posy)
 
-      console.log(posx,posy)
+   //   console.log(posx,posy)
     })
     return (
       <mesh ref={mesh} >
