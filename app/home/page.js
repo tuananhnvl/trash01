@@ -1,16 +1,16 @@
 "use client"
 import * as THREE from 'three'
 import { useRef, useEffect, useState } from 'react'
-import { useFrame,extend,useThree } from '@react-three/fiber'
+import { useFrame,extend } from '@react-three/fiber'
 import { GlobalCanvas, ScrollScene, UseCanvas, SmoothScrollbar } from '@14islands/r3f-scroll-rig'
-import { MeshDistortMaterial, useTexture ,shaderMaterial} from '@react-three/drei'
+import {  useTexture ,shaderMaterial} from '@react-three/drei'
 import gsap from 'gsap'
 
 
 const ShaderMaterialCustom = shaderMaterial(
     {
       time: 0,
-      mouseDes: { value: new THREE.Vector2(-.5,-.5) },
+      mouseDes: { value: new THREE.Vector2(0.5,0.5) },
       uTexture: { value: null },
       uOut : {value :0.},
       resolution:{value:0.}
@@ -72,7 +72,7 @@ const ShaderMaterialCustom = shaderMaterial(
 
       //rls /= pointRay(vUv  - mouseDes, .01 - sin(time), 0.42 );
 
-      float bombom = pointRay(vUv - mouseDes  , .01 , .42 );
+      float bombom = pointRay(vUv - mouseDes , .01 , .42 );
     
       rls /= bombom;
      
@@ -87,7 +87,7 @@ const ShaderMaterialCustom = shaderMaterial(
       gl_FragColor = vec4(vec3(cir),1.);
         
       gl_FragColor = vec4(outRls * img,1.-rls.x);
-     // gl_FragColor = vec4(vec3(rls),1.);
+     // gl_FragColor = vec4(vec3(mouseDes,0.),1.);
     //gl_FragColor=vec4(vec3(mouseDes,1.),1.);
   }
       `
@@ -151,9 +151,7 @@ function ExampleComponent({id}) {
   //console.log('2')
   useEffect(() => {
     
-    localStorage.setItem(`x${id}`,0)
-    localStorage.setItem(`y${id}`,0)
-    localStorage.setItem(`status${id}`,0)
+
     size.current = [el.current.clientWidth,el.current.clientHeight]
     const timeline = gsap.timeline({ overwrite: true })
 
@@ -171,7 +169,7 @@ function ExampleComponent({id}) {
        let nx = {val : localStorage.getItem(`x${id}`)}
        let ny = {val : localStorage.getItem(`y${id}`)}
        timeline.clear()
-       timeline.to(nx,{
+       .to(nx,{
           val: x/e.currentTarget.clientWidth,
           duration:.2,
           onUpdate:() => {
@@ -200,7 +198,8 @@ function ExampleComponent({id}) {
       let nx = {val : localStorage.getItem(`x${id}`)}
       let ny = {val : localStorage.getItem(`y${id}`)}
     
-      timeline.clear().to(nx,{
+      timeline.clear()
+      .to(nx,{
         val: .5,
         duration:3,
         ease: "expo.out",
@@ -242,17 +241,22 @@ function MeshChild({size,id}) {
 
     const  t = useTexture(['a.jpg','b.jpg','c.jpg','d.jpg','e.jpg','f.jpg'])
     useEffect(() => { 
-    
+      localStorage.setItem(`x${id}`,.5)
+      localStorage.setItem(`y${id}`,.5)
+      localStorage.setItem(`status${id}`,0)
+      console.log(mesh.current.material.uniforms.mouseDes.value)
       mesh.current.material.uniforms.uTexture.value = t[id-1]
     }, [t])
     useFrame((state) => { 
 
-      let posx = localStorage.getItem(`x${id}`)
-      let posy = 1.-localStorage.getItem(`y${id}`)
+      let posx = Number(localStorage.getItem(`x${id}`))
+      let posy = 1.-Number(localStorage.getItem(`y${id}`))
       mesh.current.material.uniforms.resolution.value =  new THREE.Vector2(size[0],size[1])
       mesh.current.material.uniforms.time.value = state.clock.elapsedTime
       mesh.current.material.uniforms.uOut.value = localStorage.getItem(`status${id}`)
       mesh.current.material.uniforms.mouseDes.value = new THREE.Vector2(posx,posy)
+
+      console.log(posx,posy)
     })
     return (
       <mesh ref={mesh} >
