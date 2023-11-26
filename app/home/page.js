@@ -1,3 +1,4 @@
+
 "use client"
 import * as THREE from 'three'
 import { useRef, useEffect, useState } from 'react'
@@ -72,7 +73,7 @@ const ShaderMaterialCustom = shaderMaterial(
 
       //rls /= pointRay(vUv  - mouseDes, .01 - sin(time), 0.42 );
 
-      float bombom = pointRay(vUv - mouseDes , .01 , .42 );
+      float bombom = pointRay(vUv - mouseDes , .03 , .42 );
     
       rls /= bombom;
      
@@ -94,17 +95,136 @@ const ShaderMaterialCustom = shaderMaterial(
   )
   // declaratively
   extend({ ShaderMaterialCustom })
+
 export default function App() {
-  const [isTouch, setTouch] = useState(false)
+  const section = useRef()
+  const STORE_OLDPOS= []
+  const STORE_POSDOMSCURENT= []
+  const DOM_ACTIVE = []
+  const listPointDom = useRef([])
+  const elementIds = ['box0', 'box1','box2','box3','box4','box5'];
+  const SEND_MOUSE = useRef([])
   useEffect(() => {
-    localStorage.clear()
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0
-    setTouch(isTouch)
+    
+
+    const listDomWB = document.querySelectorAll('.Placeholder')
+    listPointDom.current  = document.querySelectorAll('.span')
+    console.log(listPointDom.current)
+    for (let i = 0; i < listDomWB.length; i++) {
+     
+      STORE_OLDPOS.push({x:.5,y:.5})
+      STORE_POSDOMSCURENT.push({x:.5,y:.5})
+      
+    }
+
+    // Get the container element
+    const con = document.querySelector('.gridgrid');
+    
+    // Check if the element exists before adding the event listener
+    if (con) {
+      con.addEventListener('mousemove', handleMoveGlobal);
+      animate()
+      // Clean up the event listener when the component unmounts
+      return () => {
+        con.removeEventListener('mousemove', handleMoveGlobal);
+      };
+    } else {
+      console.error('Element with class "container" not found.');
+    }
+
   }, [])
+ 
+   const handleMoveGlobal = (event) => {
+  
+    const mouseX = event.clientX;
+   
+    const mouseY = event.clientY;
+   
+    elementIds.forEach((id) => {
+      const el = document.getElementById(id);
+      const key = Number(el.getAttribute("data-key"))
+      const rect = el.getBoundingClientRect();
+      const activeCopy = [...DOM_ACTIVE];
+      if (
+        mouseX >= rect.left - 50 * 1 && mouseX <= rect.right + 50 * 1 &&
+        mouseY >= rect.top - 50 * 1 && mouseY <= rect.bottom + 50 * 1
+      ) {
+        
+              // Calculate normalized coordinates
+          const normalizedX = (mouseX - rect.left) / (rect.right - rect.left);
+          const normalizedY = (mouseY - rect.top) / (rect.bottom - rect.top);
+  
+           // Ensure values are within the range [0, 1]
+          const clampedX = Math.max(0, Math.min(1, normalizedX));
+          const clampedY = Math.max(0, Math.min(1, normalizedY));
+          STORE_POSDOMSCURENT[key] = {x:clampedX,y:clampedY}
+        //  console.log(`DOM:${id}`,clampedX,clampedY)
+        if (!DOM_ACTIVE.includes(key)) {
+          DOM_ACTIVE.push(key);
+        }
+    
+        }else{
+          const index = activeCopy.indexOf(key);
+          if (index !== -1) {
+            DOM_ACTIVE.splice(index, 1);
+          }
+        }
+    });
+  }
+ 
+function lerp(start, end, t) {
+  return start * (1 - t) + end * t;
+}
+function findNonDuplicateNumbers(arrayA, arrayB) {
+  // Find numbers in arrayA that are not in arrayB
+  const nonDuplicatesInA = arrayA.filter((num) => !arrayB.includes(num));
+
+  // Find numbers in arrayB that are not in arrayA
+  const nonDuplicatesInB = arrayB.filter((num) => !arrayA.includes(num));
+
+  // Concatenate the two sets of non-duplicate numbers
+  const result = nonDuplicatesInA.concat(nonDuplicatesInB);
+
+  return result;
+}
+function animate() {
+  requestAnimationFrame(animate)
+  const DOM_NOACTIVE = findNonDuplicateNumbers([0,1,2,3,4,5], DOM_ACTIVE);
+ 
+  if(listPointDom.current) {
+    for (let i = 0; i < DOM_ACTIVE.length; i++) {
+        let a = listPointDom.current[Number(DOM_ACTIVE[i])]
+        a.style.left =  `${ (STORE_OLDPOS[Number(DOM_ACTIVE[i])].x ) * 100.}%`
+        a.style.top = `${(STORE_OLDPOS[Number(DOM_ACTIVE[i])].y) * 100.}%`
+  
+         STORE_OLDPOS[Number(DOM_ACTIVE[i])].x = lerp(STORE_OLDPOS[Number(DOM_ACTIVE[i])].x, STORE_POSDOMSCURENT[Number(DOM_ACTIVE[i])].x, .1)
+         STORE_OLDPOS[Number(DOM_ACTIVE[i])].y = lerp(STORE_OLDPOS[Number(DOM_ACTIVE[i])].y, STORE_POSDOMSCURENT[Number(DOM_ACTIVE[i])].y, .1)
+      
+    }
+   
+    for (let y = 0; y < DOM_NOACTIVE.length; y++) {
+   
+        let b = listPointDom.current[Number(DOM_NOACTIVE[y])]
+        b.style.left =  `${ (STORE_OLDPOS[Number(DOM_NOACTIVE[y])].x ) * 100.}%`
+        b.style.top = `${(STORE_OLDPOS[Number(DOM_NOACTIVE[y])].y) * 100.}%`
+  
+        STORE_OLDPOS[Number(DOM_NOACTIVE[y])].x = lerp(STORE_OLDPOS[Number(DOM_NOACTIVE[y])].x, .5, .05)
+        STORE_OLDPOS[Number(DOM_NOACTIVE[y])].y = lerp(STORE_OLDPOS[Number(DOM_NOACTIVE[y])].y, .5, .05)
+    }
+
+
+    for(let m = 0; m < STORE_OLDPOS.length; m++) {
+        localStorage.setItem(`x${m}`,STORE_OLDPOS[m].x)
+        localStorage.setItem(`y${m}`,STORE_OLDPOS[m].y)
+    }
+  }
+ 
+
+}
   return (
     <>
       <GlobalCanvas style={{ pointerEvents: 'auto' }}>
-        <ambientLight />
+     
       </GlobalCanvas>
       <SmoothScrollbar>
         {(bind) => (
@@ -116,21 +236,14 @@ export default function App() {
               
               <h1>Basic &lt;ScrollScene/&gt; example</h1>
             </section>
-            {isTouch && (
-              <section>
-                <p style={{ color: 'orange' }}>
-                  You are on a touch device which means the WebGL won't sync with the native scroll. Consider disabling ScrollScenes for
-                  touch devices, or experiment with the `smoothTouch` setting on Lenis.
-                </p>
-              </section>
-            )}
-            <section className='gridgrid'>
-              <ExampleComponent id="1"/>
-              <ExampleComponent id="2"/>
-              <ExampleComponent id="3"/>
-              <ExampleComponent id="4"/>
-              <ExampleComponent id="5"/>
-              <ExampleComponent id="6"/>
+
+            <section className='gridgrid' >
+              <ExampleComponent id="box0" data="0"/>
+              <ExampleComponent id="box1" data="1"/>
+              <ExampleComponent id="box2" data="2" />
+              <ExampleComponent id="box3" data="3"/>
+              <ExampleComponent id="box4" data="4"/>
+              <ExampleComponent id="box5" data="5"/>
             </section>
        
             <section>Both these ScrollScenes are tracking DOM elements and scaling their WebGL meshes to fit.</section>
@@ -143,125 +256,55 @@ export default function App() {
   )
 }
 
-function ExampleComponent({id}) {
+function ExampleComponent({id,data,dym}) {
   const el = useRef(null)
   const size = useRef([])
-  const inOut = useRef(0)
-  const lock = useRef(false)
-  //console.log('2')
   useEffect(() => {
-    
-
+   
     size.current = [el.current.clientWidth,el.current.clientHeight]
-    const timeline = gsap.timeline({ overwrite: true })
-
-
-
-    el.current.onmousemove = function(e) { 
-     
-        if(inOut.current === 0 && lock.current === false) return
-        let offsetLeft = e.currentTarget.offsetLeft 
-        let offsetTop = e.currentTarget.offsetTop 
-        const x = e.pageX - offsetLeft; 
-        const y = e.pageY - offsetTop; 
-       // console.log('move')
-      
-       let nx = {val : localStorage.getItem(`x${id}`)}
-       let ny = {val : localStorage.getItem(`y${id}`)}
-       timeline.clear()
-       .to(nx,{
-          val: x/e.currentTarget.clientWidth,
-          duration:.2,
-          onUpdate:() => {
-            localStorage.setItem(`x${id}`,nx.val)
-          }
-        }).to(ny,{
-          val: y/e.currentTarget.clientHeight,
-          duration:.2,
-          onUpdate:() => {
-            localStorage.setItem(`y${id}`,ny.val)
-          
-          }
-        },"<")
-    }
-    el.current.onmouseenter = function(e) {
-    //  console.log('enter')
-      inOut.current = 1
-      lock.current = false
-      localStorage.setItem(`status${id}`,1)
-    }
-    el.current.onmouseout = function(e) {
-     // console.log('out')
-      inOut.current = 0
-      lock.current = true
-      localStorage.setItem(`status${id}`,0)
-      let nx = {val : localStorage.getItem(`x${id}`)}
-      let ny = {val : localStorage.getItem(`y${id}`)}
-    
-      timeline.clear()
-      .to(nx,{
-        val: .5,
-        duration:3,
-        ease: "expo.out",
-        onUpdate:() => {
-          localStorage.setItem(`x${id}`,nx.val)
-        },
-        onComplete: () => {
-        
-        }
-      }).to(ny,{
-        val: .5,
-        duration:3,
-        ease: "expo.out",
-        onUpdate:() => {
-          localStorage.setItem(`y${id}`,ny.val)
-        
-        }
-      },"<")
-  
-    }
 
   },[el])
 
   return (
     <>
-      <div ref={el} className="Placeholder ScrollScene" id={id} /* style={{height: `${Math.random() * 700 + 350}px !important`}} */></div>
+      <div ref={el} className="Placeholder ScrollScene" id={id} data-key={data} /* style={{height: `${Math.random() * 700 + 350}px !important`}} */>
+        <span className="span"></span>
+      </div>
       <UseCanvas>
         <ScrollScene track={el}>
           {(props) => (
-           <MeshChild size={size.current} id={id}/>
+           <MeshChild size={size.current} id={id} data={data}/>
           )}
         </ScrollScene>
       </UseCanvas>
     </>
   )
 }
-function MeshChild({size,id}) {
+function MeshChild({size,id,data}) {
     const mesh = useRef(null)
 
     const  t = useTexture(['a.jpg','b.jpg','c.jpg','d.jpg','e.jpg','f.jpg'])
     useEffect(() => { 
-      localStorage.setItem(`x${id}`,.5)
-      localStorage.setItem(`y${id}`,.5)
-      localStorage.setItem(`status${id}`,0)
-     // console.log(mesh.current.material.uniforms.mouseDes.value)
-      mesh.current.material.uniforms.uTexture.value = t[id-1]
+    //   localStorage.setItem(`x${id}`,.5)
+    //   localStorage.setItem(`y${id}`,.5)
+    //   localStorage.setItem(`status${id}`,0)
+    //  // console.log(mesh.current.material.uniforms.mouseDes.value)
+      mesh.current.material.uniforms.uTexture.value = t[data]
     }, [t])
     useFrame((state) => { 
-
-      let posx = Number(localStorage.getItem(`x${id}`))
-      let posy = 1.-Number(localStorage.getItem(`y${id}`))
+    
+      let posx = Number(localStorage.getItem(`x${data}`))
+      let posy = 1.-Number(localStorage.getItem(`y${data}`))
       mesh.current.material.uniforms.resolution.value =  new THREE.Vector2(size[0],size[1])
-      mesh.current.material.uniforms.time.value = state.clock.elapsedTime
-      mesh.current.material.uniforms.uOut.value = localStorage.getItem(`status${id}`)
+     mesh.current.material.uniforms.time.value = state.clock.elapsedTime
+     mesh.current.material.uniforms.uOut.value = localStorage.getItem(`status${id}`)
       mesh.current.material.uniforms.mouseDes.value = new THREE.Vector2(posx,posy)
 
-   //   console.log(posx,posy)
     })
     return (
       <mesh ref={mesh} >
         <planeGeometry args={[size[0] / 1.0,size[1]/ 1.0]} />
-         <shaderMaterialCustom /> 
+         <shaderMaterialCustom/>
       </mesh>
     )
   }

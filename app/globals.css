@@ -50,13 +50,25 @@ section.text {
   font-size: 16px;
 }
 .gridgrid {
-  width: 100%;
-  height: auto;
+  width: 95vw;
+  height: fit-content;
   
   display: flex;
   flex-wrap: wrap;
   justify-content:center;
+  position:relative;
   
+  padding: 100px 0;
+}
+.gridgrid .span {
+  position:absolute;
+  transform:translate(-50%,-50%);
+  width:20px;
+  height:20px;
+
+  z-index:99;
+  top:0;
+  left:0;
 }
 .Placeholder {
   display: flex;
@@ -66,7 +78,7 @@ section.text {
   width: 25%;
   height:420px;
   margin: 0 0 50px 50px;
- 
+
 }
 
 .ScrollScene,
